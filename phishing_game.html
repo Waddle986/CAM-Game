@@ -45,6 +45,81 @@
             image-rendering: pixelated;
             position: relative;
             overflow-x: hidden;
+            transition: filter 0.2s ease;
+        }
+
+        /* Glitch & Corruption Animations */
+        @keyframes screen-shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-8px, 6px) rotate(-1deg); }
+            20% { transform: translate(7px, -5px) rotate(1deg); }
+            30% { transform: translate(-6px, -4px) rotate(0deg); }
+            40% { transform: translate(8px, 4px) rotate(1deg); }
+            50% { transform: translate(-4px, 8px) rotate(-1deg); }
+            60% { transform: translate(6px, -3px) rotate(0deg); }
+            70% { transform: translate(-8px, 2px) rotate(1deg); }
+            80% { transform: translate(5px, -6px) rotate(-1deg); }
+            90% { transform: translate(-3px, 4px) rotate(0deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .corrupt-shake {
+            animation: screen-shake 0.35s infinite linear;
+        }
+
+        /* Chromatic Aberration & Visual Corruption Overlay */
+        .glitch-active {
+            position: relative;
+            filter: contrast(150%) hue-rotate(90deg) invert(10%);
+        }
+
+        .glitch-active::before,
+        .glitch-active::after {
+            content: "CRITICAL FAULT";
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 2rem;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        .glitch-active::before {
+            color: #00F0FF;
+            text-shadow: -4px 0 #FF007F;
+            animation: glitch-anim 0.2s infinite alternate-reverse;
+        }
+
+        .glitch-active::after {
+            color: #FF007F;
+            text-shadow: 4px 0 #00F0FF;
+            animation: glitch-anim 0.3s infinite alternate;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip-path: inset(10% 0 80% 0); transform: translate(-48%, -52%); }
+            20% { clip-path: inset(70% 0 10% 0); transform: translate(-52%, -48%); }
+            40% { clip-path: inset(40% 0 50% 0); transform: translate(-46%, -50%); }
+            60% { clip-path: inset(80% 0 5% 0); transform: translate(-54%, -51%); }
+            80% { clip-path: inset(25% 0 60% 0); transform: translate(-49%, -47%); }
+            100% { clip-path: inset(0% 0 90% 0); transform: translate(-50%, -50%); }
+        }
+
+        /* Glitch Canvas Overlay */
+        #glitch-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 50;
+            display: none;
+            opacity: 0.85;
         }
 
         /* Cyberpunk Grid Horizon Overlay */
@@ -173,6 +248,9 @@
 </head>
 <body class="font-pixel text-white min-h-screen flex flex-col justify-between select-none relative">
     
+    <!-- Canvas Overlay for Memory Corruption Visuals -->
+    <canvas id="glitch-canvas"></canvas>
+
     <!-- Cyberpunk Background Grid -->
     <div class="cyber-grid"></div>
 
@@ -298,27 +376,36 @@
             </div>
 
             <!-- 4. GAME OVER SCREEN -->
-            <div id="gameover-screen" class="hidden bg-pixel-card border-4 border-black p-6 sm:p-10 text-center pixel-box-shadow flex-col items-center">
-                <div class="text-4xl mb-3 animate-bounce">⚠️</div>
-                <h2 class="text-xl sm:text-2xl text-pixel-red mb-2 drop-shadow-[0_0_10px_rgba(255,42,85,0.7)]">SYSTEM COMPROMISED</h2>
-                <p class="font-terminal text-xl text-gray-300 mb-6">YOU RAN OUT OF LIVES!</p>
+            <div id="gameover-screen" class="hidden bg-pixel-card border-4 border-black p-6 sm:p-10 text-center pixel-box-shadow flex-col items-center relative z-20">
+                <div class="text-4xl mb-3 animate-pulse text-pixel-red">☠️</div>
+                <h2 class="text-xl sm:text-2xl text-pixel-red mb-1 drop-shadow-[0_0_10px_rgba(255,42,85,0.7)] animate-bounce">SYSTEM CORRUPTED</h2>
+                <p class="font-terminal text-2xl text-pixel-pink mb-4 tracking-widest">[ KERNEL PANIC: MEMORY DUMP OVERFLOW ]</p>
 
-                <div class="bg-black/70 border-4 border-black p-4 w-full max-w-md mb-6 space-y-3 font-terminal text-2xl shadow-[0_0_12px_rgba(255,0,127,0.3)]">
-                    <div class="flex justify-between items-center border-b border-gray-800 pb-2">
+                <!-- CORRUPTED DATA MATRIX CONTAINER -->
+                <div class="bg-black/80 border-4 border-pixel-pink p-4 w-full max-w-md mb-6 space-y-3 font-terminal text-2xl shadow-[0_0_20px_rgba(255,0,127,0.5)] relative overflow-hidden">
+                    <div id="hex-garbage" class="absolute inset-0 opacity-20 text-xs text-pixel-blue font-pixel break-all p-1 pointer-events-none select-none">
+                        0x00FF99 0xDEADBEEF 0x00F0FF SYSTEM_ERR 0x1A09 0x99FF 0x00FF99 0xDEADBEEF 0x00F0FF 0x1A09
+                    </div>
+                    
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-2 relative z-10">
                         <span class="text-gray-400">FINAL SCORE:</span>
                         <span id="final-score" class="text-pixel-yellow font-pixel text-sm">0000</span>
                     </div>
-                    <div class="flex justify-between items-center border-b border-gray-800 pb-2">
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-2 relative z-10">
+                        <span class="text-gray-400">ACCURACY:</span>
+                        <span id="final-accuracy" class="text-pixel-blueLight font-pixel text-xs">0%</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-2 relative z-10">
                         <span class="text-gray-400">EMAILS PROCESSED:</span>
                         <span id="final-total" class="text-pixel-blueLight">0</span>
                     </div>
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between items-center relative z-10">
                         <span class="text-gray-400">SECURITY RANK:</span>
                         <span id="security-rank" class="text-pixel-pink font-pixel text-xs">NOVICE</span>
                     </div>
                 </div>
 
-                <button id="restart-btn" class="btn-pixel btn-phish px-8 py-4 text-xs sm:text-sm font-bold tracking-wider cursor-pointer">
+                <button id="restart-btn" class="btn-pixel btn-phish px-8 py-4 text-xs sm:text-sm font-bold tracking-wider cursor-pointer shadow-[0_0_15px_#FF007F]">
                     REBOOT SYSTEM 🔄
                 </button>
             </div>
@@ -419,6 +506,7 @@
             lives: 3,
             emailIndex: 0,
             totalProcessed: 0,
+            correctCount: 0,
             shuffledDeck: []
         };
 
@@ -442,12 +530,21 @@
 
         const finalScore = document.getElementById('final-score');
         const finalTotal = document.getElementById('final-total');
+        const finalAccuracy = document.getElementById('final-accuracy');
         const securityRank = document.getElementById('security-rank');
+        const glitchCanvas = document.getElementById('glitch-canvas');
+        const hexGarbage = document.getElementById('hex-garbage');
+        const ctx = glitchCanvas.getContext('2d');
+        let glitchInterval = null;
 
         /* ----------------------------------------------------
-           RETRO AUDIO EFFECTS (Tone.js Synth)
+           RETRO AUDIO EFFECTS (Tone.js Synth + Noise)
         ---------------------------------------------------- */
         const synth = new Tone.Synth().toDestination();
+        const noiseSynth = new Tone.NoiseSynth({
+            noise: { type: 'brown' },
+            envelope: { attack: 0.01, decay: 0.2, sustain: 0 }
+        }).toDestination();
 
         function playSound(type) {
             try {
@@ -465,11 +562,90 @@
                 } else if (type === 'click') {
                     synth.triggerAttackRelease("A4", "16n", now);
                 } else if (type === 'gameover') {
-                    synth.triggerAttackRelease("C3", "4n", now);
-                    synth.triggerAttackRelease("F2", "2n", now + 0.2);
+                    // Glitch / Corruption synth sequence
+                    noiseSynth.triggerAttackRelease("8n", now);
+                    synth.triggerAttackRelease("C2", "4n", now);
+                    synth.triggerAttackRelease("F#1", "4n", now + 0.15);
+                    synth.triggerAttackRelease("C1", "2n", now + 0.3);
                 }
             } catch (e) {
                 // Silently fallback if audio block occurs
+            }
+        }
+
+        /* ----------------------------------------------------
+           CORRUPTION CANVAS & VISUAL EFFECTS
+        ---------------------------------------------------- */
+        function resizeGlitchCanvas() {
+            glitchCanvas.width = window.innerWidth;
+            glitchCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeGlitchCanvas);
+        resizeGlitchCanvas();
+
+        function renderGlitchNoise() {
+            ctx.clearRect(0, 0, glitchCanvas.width, glitchCanvas.height);
+            const w = glitchCanvas.width;
+            const h = glitchCanvas.height;
+
+            // Draw corrupt horizontal pixel slices
+            const numSlices = Math.floor(Math.random() * 15) + 5;
+            for (let i = 0; i < numSlices; i++) {
+                const sliceY = Math.random() * h;
+                const sliceH = Math.random() * 25 + 5;
+                const offsetX = (Math.random() - 0.5) * 80;
+                
+                ctx.fillStyle = Math.random() > 0.5 ? 'rgba(0, 240, 255, 0.3)' : 'rgba(255, 0, 127, 0.3)';
+                ctx.fillRect(offsetX, sliceY, w, sliceH);
+            }
+
+            // Draw noise blocks
+            for (let i = 0; i < 40; i++) {
+                const bx = Math.random() * w;
+                const by = Math.random() * h;
+                const bw = Math.random() * 60 + 10;
+                const bh = Math.random() * 15 + 2;
+                ctx.fillStyle = Math.random() > 0.5 ? '#00F0FF' : '#FF007F';
+                ctx.fillRect(bx, by, bw, bh);
+            }
+        }
+
+        function generateHexGarbage() {
+            let str = '';
+            const hexChars = '0123456789ABCDEF';
+            for (let i = 0; i < 120; i++) {
+                if (Math.random() > 0.7) {
+                    str += ' 0x' + hexChars[Math.floor(Math.random()*16)] + hexChars[Math.floor(Math.random()*16)];
+                } else if (Math.random() > 0.8) {
+                    str += ' [CORRUPT]';
+                } else {
+                    str += ' ' + Math.floor(Math.random()*2);
+                }
+            }
+            hexGarbage.textContent = str;
+        }
+
+        function startCorruptionEffect() {
+            document.body.classList.add('corrupt-shake', 'glitch-active');
+            glitchCanvas.style.display = 'block';
+            
+            glitchInterval = setInterval(() => {
+                renderGlitchNoise();
+                generateHexGarbage();
+            }, 60);
+
+            // Slower glitch pulsing after initial burst
+            setTimeout(() => {
+                document.body.classList.remove('corrupt-shake');
+            }, 1200);
+        }
+
+        function stopCorruptionEffect() {
+            document.body.classList.remove('corrupt-shake', 'glitch-active');
+            glitchCanvas.style.display = 'none';
+            if (glitchInterval) {
+                clearInterval(glitchInterval);
+                glitchInterval = null;
             }
         }
 
@@ -503,10 +679,13 @@
 
         function startGame() {
             playSound('click');
+            stopCorruptionEffect();
+            
             state.score = 0;
             state.lives = 3;
             state.emailIndex = 0;
             state.totalProcessed = 0;
+            state.correctCount = 0;
             state.shuffledDeck = shuffleArray(EMAIL_DATASET);
 
             updateUI();
@@ -550,6 +729,7 @@
             if (isCorrect) {
                 playSound('correct');
                 state.score += 100;
+                state.correctCount++;
                 feedbackResult.textContent = "✅ CORRECT DECISION!";
                 feedbackHeaderBox.className = "p-3 border-4 border-black mb-4 text-center bg-pixel-green/30 text-pixel-green";
             } else {
@@ -579,12 +759,18 @@
 
         function showGameOver() {
             playSound('gameover');
+            startCorruptionEffect();
+
             feedbackScreen.classList.add('hidden');
             emailScreen.classList.add('hidden');
             gameoverScreen.classList.remove('hidden');
+            gameoverScreen.classList.add('flex');
 
             finalScore.textContent = state.score.toString().padStart(4, '0');
             finalTotal.textContent = state.totalProcessed;
+            
+            const acc = state.totalProcessed > 0 ? Math.round((state.correctCount / state.totalProcessed) * 100) : 0;
+            finalAccuracy.textContent = `${acc}%`;
 
             // Calculate Rank based on score
             let rank = "ROOKIE GUARD";
