@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishGuard 16-Bit Edition</title>
+    <!-- Google Fonts for Retro Pixel Aesthetics -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pixel: {
+                            bg: '#1a1a2e',
+                            card: '#16213e',
+                            pinkLight: '#FFC8DD',
+                            pink: '#FFAFCC',
+                            pinkDark: '#ff6699',
+                            blueLight: '#BDE0FE',
+                            blue: '#A2D2FF',
+                            blueDark: '#4a8fe7',
+                            yellow: '#FEE440',
+                            green: '#06D6A0',
+                            red: '#EF476F',
+                            paper: '#f8f9fa'
+                        }
+                    },
+                    fontFamily: {
+                        pixel: ['"Press Start 2P"', 'monospace'],
+                        terminal: ['"VT323"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 16-Bit Custom Pixel Styling */
+        body {
+            background-color: #1a1a2e;
+            image-rendering: pixelated;
+        }
+
+        /* Pixel Border Effect */
+        .pixel-border {
+            box-shadow: 
+                -4px 0 0 0 #000,
+                4px 0 0 0 #000,
+                0 -4px 0 0 #000,
+                0 4px 0 0 #000;
+            margin: 4px;
+        }
+
+        .pixel-border-pink {
+            box-shadow: 
+                -4px 0 0 0 #FFAFCC,
+                4px 0 0 0 #FFAFCC,
+                0 -4px 0 0 #FFAFCC,
+                0 4px 0 0 #FFAFCC;
+            margin: 4px;
+        }
+
+        .pixel-border-blue {
+            box-shadow: 
+                -4px 0 0 0 #A2D2FF,
+                4px 0 0 0 #A2D2FF,
+                0 -4px 0 0 #A2D2FF,
+                0 4px 0 0 #A2D2FF;
+            margin: 4px;
+        }
+
+        .pixel-box-shadow {
+            box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Custom Pixel Buttons */
+        .btn-pixel {
+            position: relative;
+            display: inline-block;
+            border: 4px solid #000;
+            text-transform: uppercase;
+            user-select: none;
+            transition: transform 0.05s ease;
+        }
+
+        .btn-pixel:active {
+            transform: translate(2px, 2px);
+        }
+
+        .btn-phish {
+            background-color: #FFAFCC;
+            color: #1a1a2e;
+        }
+        .btn-phish:hover {
+            background-color: #ff99bb;
+        }
+
+        .btn-safe {
+            background-color: #A2D2FF;
+            color: #1a1a2e;
+        }
+        .btn-safe:hover {
+            background-color: #8bc4ff;
+        }
+
+        /* Scanlines Overlay */
+        .scanlines {
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.15) 50%
+            );
+            background-size: 100% 4px;
+            z-index: 40;
+            pointer-events: none;
+        }
+
+        /* Custom Scrollbar for retro look */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #16213e;
+            border: 2px solid #000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FFAFCC;
+            border: 2px solid #000;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A2D2FF;
+        }
+    </style>
+</head>
+<body class="font-pixel text-white min-h-screen flex flex-col justify-between select-none relative overflow-x-hidden">
+    
+    <!-- CRT Scanline effect overlay -->
+    <div class="scanlines absolute inset-0 fixed"></div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container mx-auto px-2 py-4 max-w-4xl flex-grow flex flex-col justify-center">
+
+        <!-- HEADER / TOP BAR -->
+        <header class="bg-pixel-card border-4 border-black p-3 mb-4 rounded-none pixel-box-shadow flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center gap-2">
+                <span class="text-pixel-pink text-xl sm:text-2xl animate-pulse">✉</span>
+                <h1 class="text-sm sm:text-lg text-pixel-blueLight tracking-wider">PHISH-GUARD <span class="text-xs text-pixel-pink font-terminal">v1.6-BIT</span></h1>
+            </div>
+            
+            <!-- STATS COUNTER -->
+            <div class="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm">
+                <div class="flex items-center gap-1 bg-black/40 px-3 py-1.5 border-2 border-pixel-pink">
+                    <span class="text-pixel-pink">SCORE:</span>
+                    <span id="score-val" class="text-pixel-yellow">0000</span>
+                </div>
+                <div class="flex items-center gap-1 bg-black/40 px-3 py-1.5 border-2 border-pixel-blue">
+                    <span class="text-pixel-blue">LIVES:</span>
+                    <span id="lives-container" class="flex gap-1 text-pixel-red text-sm sm:text-base">
+                        ❤️❤️❤️
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <!-- GAME AREA CONTAINER -->
+        <main id="game-container" class="relative">
+
+            <!-- 1. START SCREEN -->
+            <div id="start-screen" class="bg-pixel-card border-4 border-black p-6 sm:p-10 text-center pixel-box-shadow flex flex-col items-center">
+                <div class="w-16 h-16 bg-pixel-pink border-4 border-black flex items-center justify-center text-3xl mb-4 text-pixel-bg shadow-lg">
+                    🛡️
+                </div>
+                <h2 class="text-base sm:text-xl text-pixel-pink mb-3 leading-relaxed">INBOX SECURITY SIMULATOR</h2>
+                <p class="font-terminal text-lg sm:text-2xl text-pixel-blueLight mb-6 max-w-xl leading-normal">
+                    Inspect incoming messages! Detect cyber-threats, spot malicious spoofing, and safeguard the network.
+                </p>
+                <div class="bg-black/50 p-4 border-2 border-pixel-blue mb-6 max-w-md text-left font-terminal text-base sm:text-xl space-y-2 text-gray-300">
+                    <p class="text-pixel-yellow mb-1">🎮 RULES OF ENGAGEMENT:</p>
+                    <p class="flex items-center gap-2">✅ Correctly identify scams or safe emails: <span class="text-pixel-green">+100 PTS</span></p>
+                    <p class="flex items-center gap-2">❌ Fall for a scam or flag a safe email: <span class="text-pixel-red">-1 LIFE</span></p>
+                    <p class="flex items-center gap-2">💡 Learn expert security tips after every email!</p>
+                </div>
+                <button id="start-btn" class="btn-pixel btn-phish px-8 py-4 text-xs sm:text-sm tracking-wider font-bold shadow-lg hover:scale-105 transform cursor-pointer">
+                    START SHIFT
+                </button>
+            </div>
+
+            <!-- 2. EMAIL INTERFACE (MAIN GAMEPLAY) -->
+            <div id="email-screen" class="hidden flex-col gap-4">
+                
+                <!-- RETRO MAIL APP WINDOW -->
+                <div class="bg-pixel-paper text-gray-900 border-4 border-black pixel-box-shadow overflow-hidden">
+                    
+                    <!-- WINDOW TITLEBAR -->
+                    <div class="bg-pixel-blueDark text-white px-3 py-2 border-b-4 border-black flex justify-between items-center text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 bg-pixel-pink border border-black inline-block"></span>
+                            <span class="w-3 h-3 bg-pixel-yellow border border-black inline-block"></span>
+                            <span class="w-3 h-3 bg-pixel-green border border-black inline-block"></span>
+                            <span class="ml-2 font-bold tracking-wide">RetroMail v2.0 - [Inbox Item #<span id="email-number">1</span>]</span>
+                        </div>
+                        <span class="font-terminal text-sm opacity-90" id="current-date">MON 10:42 AM</span>
+                    </div>
+
+                    <!-- EMAIL HEADERS -->
+                    <div class="p-4 bg-gray-100 border-b-2 border-gray-300 font-terminal text-lg sm:text-xl space-y-1.5">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                            <span class="font-pixel text-xs text-gray-500 w-20">FROM:</span>
+                            <span id="email-sender" class="font-bold text-gray-800 break-all">Security Team &lt;admin@update-pass-now.com&gt;</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                            <span class="font-pixel text-xs text-gray-500 w-20">TO:</span>
+                            <span class="text-gray-700">user@company.com</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 pt-1">
+                            <span class="font-pixel text-xs text-gray-500 w-20">SUBJECT:</span>
+                            <span id="email-subject" class="font-bold text-blue-900 break-words">URGENT: Password Reset Required Immediately</span>
+                        </div>
+                    </div>
+
+                    <!-- EMAIL BODY CONTENT -->
+                    <div class="p-4 sm:p-6 bg-white font-terminal text-lg sm:text-2xl text-gray-800 leading-relaxed min-h-[180px] max-h-[300px] overflow-y-auto" id="email-body">
+                        Loading email payload...
+                    </div>
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                    <button id="btn-phish" class="btn-pixel btn-phish p-4 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 cursor-pointer">
+                        <span>🚨</span> MARK AS PHISHING
+                    </button>
+                    <button id="btn-safe" class="btn-pixel btn-safe p-4 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 cursor-pointer">
+                        <span>✅</span> MARK AS SAFE / LEGIT
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. EDUCATIONAL FEEDBACK POPUP -->
+            <div id="feedback-screen" class="hidden bg-pixel-card border-4 border-black p-6 pixel-box-shadow">
+                <div id="feedback-header-box" class="p-3 border-4 border-black mb-4 text-center">
+                    <h2 id="feedback-result" class="text-lg sm:text-xl font-bold tracking-wider">CORRECT DECISION!</h2>
+                </div>
+                
+                <div class="bg-black/40 p-4 border-2 border-gray-600 mb-6">
+                    <h3 class="text-pixel-yellow text-xs sm:text-sm mb-2 flex items-center gap-2">
+                        <span>💡</span> SECURITY ANALYSIS TIP:
+                    </h3>
+                    <p id="feedback-tip" class="font-terminal text-xl sm:text-2xl text-pixel-blueLight leading-relaxed">
+                        Notice how the domain name spelling was slightly off? Attackers often use look-alike domains.
+                    </p>
+                </div>
+
+                <button id="next-btn" class="w-full btn-pixel btn-safe p-4 text-xs sm:text-sm font-bold tracking-wider cursor-pointer">
+                    CONTINUE TO NEXT EMAIL ➔
+                </button>
+            </div>
+
+            <!-- 4. GAME OVER SCREEN -->
+            <div id="gameover-screen" class="hidden bg-pixel-card border-4 border-black p-6 sm:p-10 text-center pixel-box-shadow flex-col items-center">
+                <div class="text-4xl mb-3 animate-bounce">⚠️</div>
+                <h2 class="text-xl sm:text-2xl text-pixel-red mb-2">SYSTEM COMPROMISED</h2>
+                <p class="font-terminal text-xl text-gray-300 mb-6">YOU RAN OUT OF LIVES!</p>
+
+                <div class="bg-black/60 border-4 border-black p-4 w-full max-w-md mb-6 space-y-3 font-terminal text-2xl">
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <span class="text-gray-400">FINAL SCORE:</span>
+                        <span id="final-score" class="text-pixel-yellow font-pixel text-sm">0000</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <span class="text-gray-400">EMAILS PROCESSED:</span>
+                        <span id="final-total" class="text-pixel-blueLight">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">SECURITY RANK:</span>
+                        <span id="security-rank" class="text-pixel-pink font-pixel text-xs">NOVICE</span>
+                    </div>
+                </div>
+
+                <button id="restart-btn" class="btn-pixel btn-phish px-8 py-4 text-xs sm:text-sm font-bold tracking-wider cursor-pointer">
+                    TRY AGAIN 🔄
+                </button>
+            </div>
+
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="mt-6 text-center text-xs font-terminal text-pixel-blueLight/60">
+            PHISHGUARD 16-BIT • TRAIN YOUR CYBER RADAR
+        </footer>
+    </div>
+
+    <!-- AUDIO EFFECTS USING TONE.JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <script>
+        /* ----------------------------------------------------
+           GAME DATA: PHISHING & LEGITIMATE SCENARIOS
+        ---------------------------------------------------- */
+        const EMAIL_DATASET = [
+            {
+                isPhish: true,
+                sender: "IT Support <support@micros0ft-security-alert.com>",
+                subject: "CRITICAL: Urgent Account Suspension Warning",
+                body: "Dear Employee,<br><br>We detected unauthorized login attempts on your workstation. Your account will be <b>PERMANENTLY DELETED</b> within 2 hours unless you confirm your password.<br><br>Click the link below to verify your identity immediately:<br><a href='#' class='text-blue-600 underline font-bold'>http://verify.micros0ft-security-alert.com/login</a>",
+                tip: "Phishing! Watch out for typosquatting domains (micros0ft with a zero) and fake urgency threatening account deletion!"
+            },
+            {
+                isPhish: false,
+                sender: "GitHub <noreply@github.com>",
+                subject: "[GitHub] Security Alert: New sign-in from Firefox on Windows",
+                body: "Hi user,<br><br>We noticed a new sign-in to your GitHub account from a new browser or device.<br><br><b>Details:</b><br>- Device: Firefox on Windows<br>- Location: Seattle, USA<br><br>If this was you, you can safely ignore this email. If this wasn't you, please change your password in your account settings.",
+                tip: "Safe! Official domain (@github.com), standard notification layout, and no suspicious forced link or urgent pressure."
+            },
+            {
+                isPhish: true,
+                sender: "Human Resources <hr-update@payrol-portal-direct.net>",
+                subject: "Updated Employee Benefits & Compensation Review",
+                body: "Hello Team,<br><br>Please find the updated 2026 salary adjustment file attached. All staff members are required to review their new compensation tier.<br><br>Download attachment: <b>Salary_Adjustments_2026.exe</b>",
+                tip: "Phishing! Be extremely wary of unexpected executable files (.exe) disguised as documents from external email domains!"
+            },
+            {
+                isPhish: false,
+                sender: "Slack Notifications <notification@slack.com>",
+                subject: "New message from Alex in #project-launch",
+                body: "Alex sent a message in #project-launch:<br><br><i>\"Hey, I uploaded the new API specs to the shared drive. Let me know when you get a chance to review!\"</i><br><br><a href='#' class='text-blue-600 underline'>Open Slack to reply</a>",
+                tip: "Safe! Sent from legitimate domain (@slack.com) with standard message notification content."
+            },
+            {
+                isPhish: true,
+                sender: "PayPal Billing <service-billing@pypal-verify-account.com>",
+                subject: "Invoice #98214 Paid ($489.99 USD to CryptoExchange)",
+                body: "Thank you for your purchase! You have sent $489.99 USD to CryptoExchange Inc.<br><br>If you did not authorize this transaction, call our fraud support helpline immediately at <b>+1 (800) 555-0199</b> to request a full refund.",
+                tip: "Phishing! Tech support refund scam. They want you to call a fake phone number to steal your banking information or install remote desktop software."
+            },
+            {
+                isPhish: false,
+                sender: "Google Calendar <calendar-notification@google.com>",
+                subject: "Invitation: Weekly Engineering Sync @ Thu Nov 5 10am",
+                body: "You have been invited to the following event:<br><br><b>Weekly Engineering Sync</b><br>When: Thursday, Nov 5, 2026 • 10:00 AM - 10:30 AM<br>Organizer: Sarah Jenkins (s.jenkins@company.com)<br><br><a href='#' class='text-blue-600 underline'>Accept</a> | <a href='#' class='text-blue-600 underline'>Decline</a> | <a href='#' class='text-blue-600 underline'>Maybe</a>",
+                tip: "Safe! Standard automated invite generated by Google Calendar (@google.com) from a recognized coworker."
+            },
+            {
+                isPhish: true,
+                sender: "CEO / Executive Office <ceo.office.company@gmail.com>",
+                subject: "Quick Task - Are you available right now?",
+                body: "Hi,<br><br>I am currently stuck in an urgent board meeting and cannot take calls. I need you to purchase 5 Apple Gift Cards ($100 each) for our client giveaways immediately.<br><br>Send me the claim codes here ASAP. I will reimburse you by end of day.",
+                tip: "Phishing! Executive Impersonation (CEO Scam). Executives will never ask you to buy gift cards using personal funds via a public Gmail address!"
+            },
+            {
+                isPhish: false,
+                sender: "IT Helpdesk <helpdesk@company.com>",
+                subject: "Scheduled Network Maintenance this Saturday at 2:00 AM",
+                body: "Team,<br><br>Please be advised that internal VPN servers will undergo maintenance this Saturday from 2:00 AM to 4:00 AM EST.<br><br>No action is required on your part. If you experience connection issues on Sunday, please submit a ticket on our internal intranet portal.",
+                tip: "Safe! Sent from internal domain (@company.com), provides clear info, and does not ask for credentials or link clicking."
+            },
+            {
+                isPhish: true,
+                sender: "Netflix Support <account-info@netflx-renew-status.org>",
+                subject: "Payment Failed: Your subscription is on hold",
+                body: "We were unable to process your monthly membership payment.<br><br>Please update your credit card details within 24 hours to keep watching your favorite movies.<br><br><a href='#' class='text-blue-600 underline font-bold'>Update Payment Info Now</a>",
+                tip: "Phishing! Domain uses .org and altered spelling (netflx). Always go directly to official apps/sites to check billing status."
+            },
+            {
+                isPhish: false,
+                sender: "Zoom Video Communications <no-reply@zoom.us>",
+                subject: "Cloud Recording - Team Sync is now available",
+                body: "Hi User,<br><br>Your cloud recording for <b>Team Sync</b> is now available to view.<br><br>Topic: Team Sync<br>Date: Today<br><br><a href='#' class='text-blue-600 underline'>View Cloud Recording</a>",
+                tip: "Safe! Sent from Zoom's verified domain (@zoom.us) with standard automated notification structure."
+            }
+        ];
+
+        /* ----------------------------------------------------
+           GAME STATE MANAGEMENT
+        ---------------------------------------------------- */
+        let state = {
+            score: 0,
+            lives: 3,
+            emailIndex: 0,
+            totalProcessed: 0,
+            shuffledDeck: []
+        };
+
+        // DOM ELEMENTS
+        const startScreen = document.getElementById('start-screen');
+        const emailScreen = document.getElementById('email-screen');
+        const feedbackScreen = document.getElementById('feedback-screen');
+        const gameoverScreen = document.getElementById('gameover-screen');
+
+        const scoreVal = document.getElementById('score-val');
+        const livesContainer = document.getElementById('lives-container');
+        
+        const emailNumber = document.getElementById('email-number');
+        const emailSender = document.getElementById('email-sender');
+        const emailSubject = document.getElementById('email-subject');
+        const emailBody = document.getElementById('email-body');
+
+        const feedbackResult = document.getElementById('feedback-result');
+        const feedbackHeaderBox = document.getElementById('feedback-header-box');
+        const feedbackTip = document.getElementById('feedback-tip');
+
+        const finalScore = document.getElementById('final-score');
+        const finalTotal = document.getElementById('final-total');
+        const securityRank = document.getElementById('security-rank');
+
+        /* ----------------------------------------------------
+           RETRO AUDIO EFFECTS (Tone.js Synth)
+        ---------------------------------------------------- */
+        const synth = new Tone.Synth().toDestination();
+
+        function playSound(type) {
+            try {
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                const now = Tone.now();
+                if (type === 'correct') {
+                    synth.triggerAttackRelease("C5", "8n", now);
+                    synth.triggerAttackRelease("E5", "8n", now + 0.1);
+                    synth.triggerAttackRelease("G5", "8n", now + 0.2);
+                } else if (type === 'wrong') {
+                    synth.triggerAttackRelease("G3", "8n", now);
+                    synth.triggerAttackRelease("Eb3", "8n", now + 0.15);
+                } else if (type === 'click') {
+                    synth.triggerAttackRelease("A4", "16n", now);
+                } else if (type === 'gameover') {
+                    synth.triggerAttackRelease("C3", "4n", now);
+                    synth.triggerAttackRelease("F2", "2n", now + 0.2);
+                }
+            } catch (e) {
+                // Silently fallback if audio block occurs
+            }
+        }
+
+        /* ----------------------------------------------------
+           GAME LOGIC & HELPERS
+        ---------------------------------------------------- */
+
+        // Shuffle Deck for high replayability
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function updateUI() {
+            scoreVal.textContent = state.score.toString().padStart(4, '0');
+            // Render Hearts for Lives
+            let heartsHtml = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < state.lives) {
+                    heartsHtml += '❤️';
+                } else {
+                    heartsHtml += '🖤';
+                }
+            }
+            livesContainer.innerHTML = heartsHtml;
+        }
+
+        function startGame() {
+            playSound('click');
+            state.score = 0;
+            state.lives = 3;
+            state.emailIndex = 0;
+            state.totalProcessed = 0;
+            state.shuffledDeck = shuffleArray(EMAIL_DATASET);
+
+            updateUI();
+
+            startScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
+            feedbackScreen.classList.add('hidden');
+            emailScreen.classList.remove('hidden');
+
+            loadCurrentEmail();
+        }
+
+        function loadCurrentEmail() {
+            // Loop deck endlessly with shuffling if exhausted
+            if (state.emailIndex >= state.shuffledDeck.length) {
+                state.shuffledDeck = shuffleArray(EMAIL_DATASET);
+                state.emailIndex = 0;
+            }
+
+            const current = state.shuffledDeck[state.emailIndex];
+            
+            emailNumber.textContent = state.totalProcessed + 1;
+            emailSender.textContent = current.sender;
+            emailSubject.textContent = current.subject;
+            emailBody.innerHTML = current.body;
+
+            emailScreen.classList.remove('hidden');
+            feedbackScreen.classList.add('hidden');
+        }
+
+        function handleAnswer(userGuessedPhish) {
+            playSound('click');
+            const current = state.shuffledDeck[state.emailIndex];
+            const isCorrect = (userGuessedPhish === current.isPhish);
+
+            state.totalProcessed++;
+
+            emailScreen.classList.add('hidden');
+            feedbackScreen.classList.remove('hidden');
+
+            if (isCorrect) {
+                playSound('correct');
+                state.score += 100;
+                feedbackResult.textContent = "✅ CORRECT DECISION!";
+                feedbackHeaderBox.className = "p-3 border-4 border-black mb-4 text-center bg-pixel-green/30 text-pixel-green";
+            } else {
+                playSound('wrong');
+                state.lives--;
+                feedbackResult.textContent = "❌ INCORRECT DECISION!";
+                feedbackHeaderBox.className = "p-3 border-4 border-black mb-4 text-center bg-pixel-red/30 text-pixel-red";
+            }
+
+            updateUI();
+
+            // Display tip
+            feedbackTip.textContent = current.tip;
+
+            // Advance pointer
+            state.emailIndex++;
+        }
+
+        function nextEmailOrGameOver() {
+            playSound('click');
+            if (state.lives <= 0) {
+                showGameOver();
+            } else {
+                loadCurrentEmail();
+            }
+        }
+
+        function showGameOver() {
+            playSound('gameover');
+            feedbackScreen.classList.add('hidden');
+            emailScreen.classList.add('hidden');
+            gameoverScreen.classList.remove('hidden');
+
+            finalScore.textContent = state.score.toString().padStart(4, '0');
+            finalTotal.textContent = state.totalProcessed;
+
+            // Calculate Rank based on score
+            let rank = "ROOKIE GUARD";
+            if (state.score >= 800) rank = "CYBER NINJA 🥷";
+            else if (state.score >= 500) rank = "SECURITY ANALYST 🛡️";
+            else if (state.score >= 300) rank = "JUNIOR DETECTIVE 🔍";
+
+            securityRank.textContent = rank;
+        }
+
+        /* ----------------------------------------------------
+           EVENT LISTENERS
+        ---------------------------------------------------- */
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('btn-phish').addEventListener('click', () => handleAnswer(true));
+        document.getElementById('btn-safe').addEventListener('click', () => handleAnswer(false));
+        document.getElementById('next-btn').addEventListener('click', nextEmailOrGameOver);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+
+    </script>
+</body>
+</html>
